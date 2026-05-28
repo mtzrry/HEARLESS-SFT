@@ -10,6 +10,18 @@ import {
   Volume2,
   Eye,
   Activity,
+  LayoutDashboard,
+  SlidersHorizontal,
+  Radio,
+  ListOrdered,
+  Menu,
+  Pause,
+  Play,
+  MapPin,
+  Share2,
+  AlertOctagon,
+  Settings,
+  X,
 } from "lucide-react";
 
 type Severity = "high" | "medium" | "low";
@@ -87,6 +99,18 @@ export function VibeltConfig() {
   const [hazardLogs, setHazardLogs] = useState<HazardLog[]>([]);
   const [activeNodes, setActiveNodes] = useState<Set<string>>(new Set());
 
+  type Tab = "overview" | "haptics" | "diagnostics" | "alerts";
+  const [tab, setTab] = useState<Tab>("overview");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [running, setRunning] = useState(true);
+
+  const tabs: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "haptics", label: "Haptics", icon: SlidersHorizontal },
+    { id: "diagnostics", label: "Belt", icon: Radio },
+    { id: "alerts", label: "Alerts", icon: ListOrdered },
+  ];
+
   // Distance + pace ticker
   useEffect(() => {
     const t = setInterval(() => {
@@ -135,25 +159,64 @@ export function VibeltConfig() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-6 px-4">
-      <div className="max-w-md mx-auto flex flex-col gap-4">
-        {/* Header */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">Vibelt Config</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
-                </span>
-                <span className="text-xs text-cyan-400 font-medium">Connected</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-sm">
-                <Battery className="w-4 h-4 text-slate-400" />
-                <span className="font-semibold">82%</span>
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-24">
+      {/* Top App Bar */}
+      <header className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur border-b border-slate-800">
+        <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="p-2 -ml-2 rounded-lg hover:bg-slate-900 text-slate-300"
+            aria-label="Open menu"
+          >
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+            </span>
+            <h1 className="text-sm font-semibold tracking-tight">Vibelt</h1>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs">
+            <Battery className="w-4 h-4 text-slate-400" />
+            <span className="font-semibold tabular-nums">82%</span>
+          </div>
+        </div>
+
+        {/* Tab menu */}
+        <nav className="max-w-md mx-auto px-2 pb-2 flex gap-1 overflow-x-auto">
+          {tabs.map((t) => {
+            const active = tab === t.id;
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition-colors ${
+                  active
+                    ? "bg-cyan-500/15 border-cyan-500/50 text-cyan-300"
+                    : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {t.label}
+              </button>
+            );
+          })}
+        </nav>
+      </header>
+
+      {/* Slide-down menu */}
+      {menuOpen && (
+        <div className="border-b border-slate-800 bg-slate-900">
+          <div className="max-w-md mx-auto px-4 py-3 flex flex-col gap-1 text-sm">
+            <MenuItem icon={<Settings className="w-4 h-4" />} label="Belt Settings" />
+            <MenuItem icon={<Share2 className="w-4 h-4" />} label="Share Live Location" />
+            <MenuItem icon={<MapPin className="w-4 h-4" />} label="Route History" />
+            <div className="flex items-center justify-between px-2 py-2 rounded-lg">
+              <div className="flex items-center gap-2 text-slate-200">
+                <Leaf className={`w-4 h-4 ${ecoMode ? "text-cyan-400" : "text-slate-500"}`} />
+                Eco Mode
               </div>
               <button
                 onClick={() => setEcoMode((v) => !v)}
@@ -168,14 +231,29 @@ export function VibeltConfig() {
                   }`}
                 />
               </button>
-              <Leaf
-                className={`w-4 h-4 ${ecoMode ? "text-cyan-400" : "text-slate-500"}`}
-              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-md mx-auto flex flex-col gap-4 px-4 pt-4">
+        {/* Session header */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-400">
+                {running ? "Active Session" : "Paused"}
+              </div>
+              <div className="text-lg font-bold mt-0.5 capitalize">{tab}</div>
+            </div>
+            <div className="text-xs text-cyan-400 font-medium">
+              {sensitivityMode === "city" ? "City Mode" : "Park Mode"}
             </div>
           </div>
         </div>
 
-        {/* Live Stats */}
+        {/* Overview: live stats */}
+        {(tab === "overview" || tab === "haptics") && (
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Distance", value: distance.toFixed(2), unit: "km" },
@@ -196,8 +274,10 @@ export function VibeltConfig() {
             </div>
           ))}
         </div>
+        )}
 
-        {/* Sensitivity & Sliders */}
+        {/* Haptics tab */}
+        {(tab === "overview" || tab === "haptics") && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-4">
           <div>
             <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
@@ -236,8 +316,10 @@ export function VibeltConfig() {
             onChange={setVisualThreat}
           />
         </div>
+        )}
 
         {/* Belt Diagnostics */}
+        {(tab === "overview" || tab === "diagnostics") && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs uppercase tracking-wider text-slate-400">
@@ -263,8 +345,10 @@ export function VibeltConfig() {
             <TestButton label="Test Rear" onClick={() => pulseNodes(["RL", "RR"])} />
           </div>
         </div>
+        )}
 
         {/* Hazard Log */}
+        {(tab === "overview" || tab === "alerts") && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs uppercase tracking-wider text-slate-400">
@@ -318,8 +402,75 @@ export function VibeltConfig() {
             </ul>
           )}
         </div>
+        )}
+      </div>
+
+      {/* Bottom toolbar */}
+      <div className="fixed bottom-0 inset-x-0 z-30 bg-slate-950/90 backdrop-blur border-t border-slate-800">
+        <div className="max-w-md mx-auto px-4 py-2 grid grid-cols-4 gap-2">
+          <ToolbarButton
+            icon={running ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            label={running ? "Pause" : "Resume"}
+            onClick={() => setRunning((v) => !v)}
+            accent
+          />
+          <ToolbarButton
+            icon={<MapPin className="w-5 h-5" />}
+            label="Mark"
+            onClick={() => pulseNodes(["FL", "FR"])}
+          />
+          <ToolbarButton
+            icon={<Share2 className="w-5 h-5" />}
+            label="Share"
+            onClick={() => {}}
+          />
+          <ToolbarButton
+            icon={<AlertOctagon className="w-5 h-5" />}
+            label="SOS"
+            onClick={() => pulseNodes(["FL", "FR", "ML", "MR", "RL", "RR"])}
+            danger
+          />
+        </div>
       </div>
     </div>
+  );
+}
+
+function MenuItem({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <button className="flex items-center gap-3 px-2 py-2 rounded-lg text-slate-200 hover:bg-slate-800/60 text-left">
+      <span className="text-cyan-400">{icon}</span>
+      {label}
+    </button>
+  );
+}
+
+function ToolbarButton({
+  icon,
+  label,
+  onClick,
+  accent,
+  danger,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  accent?: boolean;
+  danger?: boolean;
+}) {
+  const tone = danger
+    ? "text-rose-400 hover:bg-rose-500/10"
+    : accent
+      ? "text-cyan-300 hover:bg-cyan-500/10"
+      : "text-slate-300 hover:bg-slate-900";
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors ${tone}`}
+    >
+      {icon}
+      <span className="text-[10px] font-medium">{label}</span>
+    </button>
   );
 }
 
